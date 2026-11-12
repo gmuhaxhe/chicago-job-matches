@@ -30,6 +30,11 @@ Both need Python 3.10 or newer. No extra packages.
 When the title is only a partial fit, the other four parts are scaled down too, so a short commute can't
 lift an unrelated job. Click **Why this score** on any job to see the breakdown.
 
+**Temp jobs:** temporary, seasonal, fixed-term, contract and temp-to-hire jobs get a purple **TEMP JOB**,
+**CONTRACT** or **TEMP-TO-HIRE** label and a purple stripe on the card. They're spotted from the title, the
+job type field or wording like "this is a temporary position". The label doesn't change the score. Use the
+**Job type** filter to show permanent jobs only, or temp & contract only.
+
 Commute times are rough estimates from a lookup table of neighborhoods and suburbs, not routed trips.
 "Chicago (site not listed)" means the posting only says "Chicago", and the time assumes downtown.
 
@@ -45,9 +50,12 @@ Public job feeds from about 70 employers with downtown, Medical District or Hyde
   Advocate, University of Chicago, DePaul, Loyola, LifeStance (behavioral health)
 - **Corporate:** McDonald's, Kraft Heinz, JLL, Northern Trust, BMO, Aon, Exelon/ComEd, Blue Cross Blue Shield
   of IL, Allstate, CNA, Morningstar, Motorola Solutions, Salesforce, Amazon, Groupon, Sprout Social, and more
+- **Staffing agencies** (mostly temp and temp-to-hire office, HR and front desk jobs): Robert Half, LaSalle
+  Network, Beacon Hill, Randstad, Manpower, Aquent, Addison Group
 
 To add a company, copy a line in `config.json`. Supported types: `workday`, `greenhouse`, `lever`, `ashby`,
-`smartrecruiters`, `oracle`, `icims`, `successfactors`, `atom`, `amazon`.
+`smartrecruiters`, `oracle`, `icims`, `successfactors`, `atom`, `amazon`, plus the agency feeds
+`robert_half`, `lasalle`, `beaconhill`, `randstad`, `manpower`, `aquent`.
 
 Some large employers block automated access or have no public feed: Rush, UI Health/UIC, Cook County
 Health, Northwestern University, United Airlines, Hyatt and the big law firms. Check their career sites by

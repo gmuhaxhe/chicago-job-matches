@@ -24,8 +24,10 @@ def uid_prefix(s):
         return f"sf:{s['host']}:"
     if t == "atom":
         return f"atom:{urllib.parse.urlparse(s['url']).netloc}:"
-    if t in ("amazon", "adzuna", "usajobs"):
+    if t in ("amazon", "adzuna", "usajobs", "randstad", "manpower", "aquent"):
         return f"{t}:"
+    if t in ("robert_half", "lasalle", "beaconhill"):
+        return {"robert_half": "rh:", "lasalle": "lsn:", "beaconhill": "bhsg:"}[t]
     return {"greenhouse": "gh", "lever": "lever", "ashby": "ashby", "smartrecruiters": "sr"}[t] + f":{s['token']}:"
 
 

@@ -48,6 +48,9 @@ class Store:
         self.db = sqlite3.connect(path, check_same_thread=False)
         self.db.row_factory = sqlite3.Row
         self.db.executescript(SCHEMA)
+        cols = {r[1] for r in self.db.execute("PRAGMA table_info(jobs)")}
+        if "job_type" not in cols:  # added after the first version: Temp / Contract / Temp-to-hire
+            self.db.execute("ALTER TABLE jobs ADD COLUMN job_type TEXT")
         self.db.commit()
 
     def cached(self, uid):
@@ -59,18 +62,19 @@ class Store:
         vals = [job.get(f) for f in FIELDS]
         vals[FIELDS.index("remote")] = int(bool(job.get("remote")))
         scored = [result["score"], result["category"], result["category_label"], json.dumps(result["breakdown"]),
-                  json.dumps(result["flags"]), json.dumps(result["loc"])]
+                  json.dumps(result["flags"]), json.dumps(result["loc"]), result.get("job_type")]
         with self.lock:
             exists = self.db.execute("SELECT 1 FROM jobs WHERE uid=?", (job["uid"],)).fetchone()
             if exists:
                 sets = ", ".join(f"{f}=?" for f in FIELDS)
                 self.db.execute(
                     f"UPDATE jobs SET {sets}, last_seen=?, closed=0, score=?, category=?, category_label=?, breakdown=?, "
-                    f"flags=?, loc=? WHERE uid=?", vals + [seen_at] + scored + [job["uid"]])
+                    f"flags=?, loc=?, job_type=? WHERE uid=?", vals + [seen_at] + scored + [job["uid"]])
             else:
                 self.db.execute(
                     f"INSERT INTO jobs (uid, {', '.join(FIELDS)}, first_seen, last_seen, closed, score, category, "
-                    f"category_label, breakdown, flags, loc) VALUES ({', '.join('?' * (len(FIELDS) + 1))}, ?, ?, 0, ?, ?, ?, ?, ?, ?)",
+                    f"category_label, breakdown, flags, loc, job_type) "
+                    f"VALUES ({', '.join('?' * (len(FIELDS) + 1))}, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?)",
                     [job["uid"]] + vals + [seen_at, seen_at] + scored)
             self.db.commit()
         return not exists
@@ -89,10 +93,10 @@ class Store:
 
     def rescore(self, uid, result, location):
         with self.lock:
-            self.db.execute("UPDATE jobs SET score=?, category=?, category_label=?, breakdown=?, flags=?, loc=?, location=? "
-                            "WHERE uid=?",
+            self.db.execute("UPDATE jobs SET score=?, category=?, category_label=?, breakdown=?, flags=?, loc=?, location=?, "
+                            "job_type=? WHERE uid=?",
                             (result["score"], result["category"], result["category_label"], json.dumps(result["breakdown"]),
-                             json.dumps(result["flags"]), json.dumps(result["loc"]), location, uid))
+                             json.dumps(result["flags"]), json.dumps(result["loc"]), location, result.get("job_type"), uid))
             self.db.commit()
 
     def delete(self, uid):

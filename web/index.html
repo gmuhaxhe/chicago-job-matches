@@ -59,6 +59,14 @@
         <label class="check"><input type="checkbox" id="remote-ok" checked> Include remote jobs</label>
       </div>
       <div class="field">
+        <label for="jobtype">Job type</label>
+        <select id="jobtype">
+          <option value="all" selected>All jobs</option>
+          <option value="perm">Permanent only</option>
+          <option value="temp">Temp &amp; contract only</option>
+        </select>
+      </div>
+      <div class="field">
         <span class="label">Kind of role</span>
         <div id="cats" class="checks"></div>
       </div>
@@ -109,6 +117,7 @@
       <div class="body">
         <div class="title-row">
           <a class="title" target="_blank" rel="noopener"></a>
+          <span class="badge temp hidden"></span>
           <span class="badge new hidden">NEW</span>
         </div>
         <div class="company"></div>

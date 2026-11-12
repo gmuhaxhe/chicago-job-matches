@@ -333,10 +333,17 @@ def atom(src, ctx):
             if link in seen:
                 continue
             seen.add(link)
+            desc = html_to_text(e.findtext("a:content", "", ns) or e.findtext("a:summary", "", ns))
+            loc, kind = src.get("default_location", ""), ""
+            if src.get("fields_in_text"):  # e.g. Addison Group: "Location: Chicago, IL" / "Job Type: Contract to Hire"
+                m = re.search(r"Location:\s*([^\n]+)", desc)
+                loc = m.group(1).strip() if m else ""
+                m = re.search(r"(?:Job|Employment) Type:\s*([^\n]+)", desc)
+                kind = m.group(1).strip() if m else ""
             out.append(_job(src, uid=f"atom:{urllib.parse.urlparse(link).netloc}:{link.rstrip('/').split('/')[-1]}",
-                            title=(e.findtext("a:title", "", ns) or "").strip(), location=src.get("default_location", ""),
+                            title=(e.findtext("a:title", "", ns) or "").strip(), location=loc, employment=kind,
                             url=link, posted=iso_date(e.findtext("a:published", "", ns) or e.findtext("a:updated", "", ns)),
-                            description=html_to_text(e.findtext("a:content", "", ns) or e.findtext("a:summary", "", ns))))
+                            description=desc))
         time.sleep(0.3)
     return out
 
@@ -491,6 +498,154 @@ def workday(src, ctx):
     return out
 
 
+# ---------------------------------------------------------------- Staffing agencies (mostly temp / temp-to-hire)
+def _local(el, name):
+    """Child element text by local tag name, ignoring XML namespaces."""
+    for c in el:
+        if c.tag.rsplit("}", 1)[-1] == name:
+            return (c.text or "").strip()
+    return ""
+
+
+def robert_half(src, ctx):
+    out, seen = [], set()
+    for page in range(1, src.get("pages", 4) + 1):
+        body = {"country": "us", "keywords": "", "location": src.get("where", "Chicago, IL"), "distance": "25", "remote": [],
+                "remoteText": "", "languagecodes": [], "source": ["Salesforce"], "city": "", "emptype": "",
+                "lobid": src.get("divisions", ["OT"]), "jobtype": "", "postedwithin": "0", "timetype": "", "pagesize": 25,
+                "pagenumber": page, "mode": "", "payrate_min": 0, "payrate_period": "", "includedoe": "", "extraParams": {}}
+        d = http_json("https://www.roberthalf.com/bin/jobSearchServlet", body)
+        jobs = d.get("jobs") or []
+        for j in jobs:
+            key = j.get("unique_job_number") or j.get("job_detail_url")
+            if key in seen:
+                continue
+            seen.add(key)
+            pay = ""
+            if j.get("payrate_min"):
+                pay = f"${j['payrate_min']}-{j.get('payrate_max') or j['payrate_min']} {(j.get('payrate_period') or '').lower()}"
+            out.append(_job(src, uid=f"rh:{key}", title=j.get("jobtitle", ""), url=j.get("job_detail_url"),
+                            location=f"{j.get('city', '')}, {j.get('stateprovince', '')} {j.get('postalcode', '')}".strip(),
+                            posted=iso_date(j.get("date_posted")), employment=j.get("emptype") or "",
+                            description=html_to_text(j.get("description")) + "\n\n" + html_to_text(j.get("skills")),
+                            remote=(j.get("remote") or "").lower() == "yes", salary=pay))
+        if len(jobs) < 25 or page * 25 >= int(d.get("found") or 0):
+            break
+        time.sleep(0.5)
+    return out
+
+
+def lasalle(src, ctx):
+    kinds = {"project": "Temporary (project)", "project-to-hire": "Temp-to-hire", "direct-hire": "Direct hire"}
+    out = []
+    for page in range(1, 6):
+        try:
+            d = http_json("https://www.thelasallenetwork.com/wp-json/wp/v2/ce_job?"
+                          + urllib.parse.urlencode({"per_page": 100, "page": page, "job-category": src.get("categories", "2058,75,2153,2059")}))
+        except urllib.error.HTTPError as e:
+            if e.code == 400:  # WordPress answers 400 past the last page
+                break
+            raise
+        for j in d:
+            text = html_to_text((j.get("content") or {}).get("rendered"))
+            m = re.search(r"Location:\s*([^\n]+)", text)
+            classes = " ".join(j.get("class_list") or [])
+            kind = next((v for k, v in kinds.items() if f"employment-type-{k} " in classes + " "), "")
+            loc = (m.group(1).strip() if m else "Chicago, IL")
+            if "job-location-hybrid" in classes:
+                loc += " (Hybrid)"
+            out.append(_job(src, uid=f"lsn:{j['id']}", title=html.unescape((j.get("title") or {}).get("rendered", "")),
+                            location=loc, url=j.get("link"), posted=iso_date(j.get("date")), description=text,
+                            employment=kind, remote="job-location-remote" in classes))
+        if len(d) < 100:
+            break
+    return out
+
+
+def beaconhill(src, ctx):
+    root = http_xml("https://bhsg.com/jobs/?" + urllib.parse.urlencode(
+        {"feed": "job_feed", "search_location": src.get("where", "Chicago"), "posts_per_page": 300}))
+    out = []
+    for it in root.iter("item"):
+        link = (it.findtext("link") or "").strip()
+        posted = None
+        try:
+            posted = email.utils.parsedate_to_datetime(it.findtext("pubDate")).date().isoformat()
+        except (TypeError, ValueError):
+            pass
+        desc = _local(it, "encoded") or it.findtext("description") or ""
+        out.append(_job(src, uid=f"bhsg:{link.rstrip('/').split('/')[-1]}", title=(it.findtext("title") or "").strip(),
+                        location=_local(it, "location") or "Chicago, IL", url=link, posted=posted,
+                        description=html_to_text(desc), employment=_local(it, "job_type")))
+    return out
+
+
+def randstad(src, ctx):
+    out, seen = [], set()
+    for q in src.get("queries", ["administrative", "receptionist", "human resources", "customer service", "office"]):
+        body = {"data": {"currentRoute": {"path": "/jobs/:searchParams*", "url": "/jobs/", "isExact": True, "params": {},
+                                          "routeName": "search"}, "currentLanguage": "en",
+                         "searchParams": {"query": q, "region": "illinois", "city": "chicago", "distance": "25", "page": "1"}}}
+        d = http_json("https://www.randstadusa.com/api/search/search-results", body, timeout=60)
+        for h in (d.get("searchResults") or {}).get("hits") or []:
+            # The search is loose; keep the office & admin division only.
+            if h["id"] in seen or "office" not in (h.get("lobName") or "").lower():
+                continue
+            seen.add(h["id"])
+            loc = h.get("jobLocation") or {}
+            pt = h.get("location") or {}
+            sal = h.get("salary") or {}
+            parts = [h.get("description") or "", h.get("summary") or ""] + list(h.get("qualifications") or [])
+            out.append(_job(src, uid=f"randstad:{h['id']}", title=h.get("title", ""), url=h.get("detailsUrl"),
+                            location=f"{loc.get('city', '')}, {loc.get('stateAbbreviation', '')} {loc.get('postalCode', '')}".strip(),
+                            lat=pt.get("lat"), lon=pt.get("lon"), posted=iso_date(int(h["createdDate"])) if h.get("createdDate") else None,
+                            description="\n\n".join(html_to_text(p) for p in parts if p), employment=h.get("type") or "",
+                            remote=bool(h.get("isRemote")),
+                            salary=(f"${sal['min']}-{sal.get('max') or sal['min']} {sal.get('type', '')}" if sal.get("min") else "")))
+        time.sleep(0.5)
+    return out
+
+
+def manpower(src, ctx):
+    out = []
+    for page in range(src.get("pages", 3)):
+        body = {"filter": {"latitude": 41.8837, "longitude": -87.6324, "radius": src.get("radius_miles", 30), "offset": page,
+                           "totalCount": 0, "limit": 50, "searchkeyword": "", "haslocation": True, "language": "en"}}
+        d = http_json("https://www.manpower.com/api/services/Jobs/searchjobs", body)
+        items = d.get("jobsItems") or []
+        for j in items:
+            out.append(_job(src, uid=f"manpower:{j.get('jobID')}", title=j.get("jobTitle", ""),
+                            location=j.get("jobLocation") or "", lat=j.get("lattitude"), lon=j.get("longitude"),
+                            url="https://www.manpower.com" + (j.get("jobURL") or ""), posted=iso_date(j.get("publishfromDate")),
+                            description=html_to_text(j.get("publicDescription")), employment=j.get("employmentType") or ""))
+        if len(items) < 50:
+            break
+        time.sleep(0.5)
+    return out
+
+
+def aquent(src, ctx):
+    root = http_xml("https://aquent.com/feeds/jobs.xml")
+    out = []
+    for it in root.iter("item"):
+        loc_el = it.find("location")
+        city = _local(loc_el, "city") if loc_el is not None else ""
+        state = _local(loc_el, "state") if loc_el is not None else ""
+        remote_type = (it.findtext("remotetype") or "").lower()
+        posted = None
+        try:
+            posted = email.utils.parsedate_to_datetime(it.findtext("pubDate")).date().isoformat()
+        except (TypeError, ValueError):
+            pass
+        out.append(_job(src, uid=f"aquent:{(it.findtext('job_id') or '').strip()}",
+                        title=re.sub(r"\s*\[\d+\]\s*$", "", (it.findtext("title") or "").strip()),
+                        location=f"{city}, {state}" + (" (Hybrid)" if "hybrid" in remote_type else ""),
+                        url=(it.findtext("url") or "").strip(), posted=posted, description=html_to_text(it.findtext("description")),
+                        employment=(it.findtext("placement_type") or "").strip(), remote="fully remote" in remote_type,
+                        salary=(it.findtext("salary") or "").strip()))
+    return out
+
+
 # ---------------------------------------------------------------- Adzuna (needs free API key)
 def adzuna(src, ctx):
     if not (src.get("app_id") and src.get("app_key")):
@@ -517,7 +672,7 @@ def adzuna(src, ctx):
                                 location=(j.get("location") or {}).get("display_name", ""), url=j.get("redirect_url"),
                                 posted=iso_date(j.get("created")), description=html_to_text(j.get("description")),
                                 lat=j.get("latitude"), lon=j.get("longitude"), salary=sal,
-                                employment=j.get("contract_time") or ""))
+                                employment=" ".join(x.replace("_", " ") for x in (j.get("contract_time"), j.get("contract_type")) if x)))
             if len(res) < 50:
                 break
             time.sleep(0.5)
@@ -557,4 +712,5 @@ def usajobs(src, ctx):
 
 FETCHERS = {"greenhouse": greenhouse, "lever": lever, "ashby": ashby, "smartrecruiters": smartrecruiters,
             "workday": workday, "oracle": oracle, "icims": icims, "successfactors": successfactors, "atom": atom,
-            "amazon": amazon, "adzuna": adzuna, "usajobs": usajobs}
+            "amazon": amazon, "robert_half": robert_half, "lasalle": lasalle, "beaconhill": beaconhill,
+            "randstad": randstad, "manpower": manpower, "aquent": aquent, "adzuna": adzuna, "usajobs": usajobs}

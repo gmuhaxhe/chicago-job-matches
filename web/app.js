@@ -89,6 +89,7 @@ function readFilters() {
     days: +$("#days").value,
     commute: +$("#commute").value,
     remote: $("#remote-ok").checked,
+    jobtype: $("#jobtype").value,
     sort: $("#sort").value,
     cats: [...document.querySelectorAll("#cats input:checked")].map(i => i.value),
   };
@@ -101,6 +102,7 @@ function restoreFilters() {
   $("#days").value = f.days ?? 14;
   $("#commute").value = f.commute ?? 60;
   $("#remote-ok").checked = f.remote ?? true;
+  $("#jobtype").value = f.jobtype ?? "all";
   $("#sort").value = f.sort ?? "score";
   state.cats = f.cats || null;
 }
@@ -136,6 +138,8 @@ function visible() {
       if (isRemote && !f.remote) return false;
       if (!isRemote && loc.minutes != null && loc.minutes > f.commute) return false;
       if (!catSet.has(j.category)) return false;
+      if (f.jobtype === "perm" && j.job_type) return false;
+      if (f.jobtype === "temp" && !j.job_type) return false;
     }
     if (f.q) {
       const hay = `${j.title} ${j.company} ${j.location} ${j.snippet}`.toLowerCase();
@@ -170,6 +174,7 @@ function renderStats(list) {
     [list.length, "shown"],
     [open.filter(isNew).length, "new since last visit"],
     [open.filter(j => j.score >= 80).length, "great matches (80+)"],
+    [list.filter(j => j.job_type).length, "temp / contract shown"],
     [state.jobs.filter(j => j.mark === "saved").length, "saved"],
     [state.jobs.filter(j => j.mark === "applied").length, "applied"],
   ];
@@ -186,6 +191,13 @@ function card(j) {
   t.href = j.url;
   $(".open", el).href = j.url;
   if (isNew(j)) $(".badge.new", el).classList.remove("hidden");
+  if (j.job_type) {
+    const b = $(".badge.temp", el);
+    b.textContent = j.job_type === "Temp" ? "Temp job" : j.job_type;
+    b.title = "Temporary / contract position";
+    b.classList.remove("hidden");
+    el.classList.add("is-temp");
+  }
   $(".company", el).textContent = j.company + (j.setting ? ` · ${j.setting}` : "");
 
   const loc = j.loc || {};
@@ -320,7 +332,7 @@ function wire() {
   ["#q", "#min-score"].forEach(s => $(s).addEventListener("input", () => {
     $("#min-score-val").textContent = $("#min-score").value; rerender();
   }));
-  ["#days", "#commute", "#remote-ok", "#sort"].forEach(s => $(s).addEventListener("change", rerender));
+  ["#days", "#commute", "#remote-ok", "#jobtype", "#sort"].forEach(s => $(s).addEventListener("change", rerender));
   $("#cats").addEventListener("change", () => { state.cats = readFilters().cats; rerender(); });
   document.querySelectorAll("#view button").forEach(b => b.onclick = () => {
     state.view = b.dataset.view;

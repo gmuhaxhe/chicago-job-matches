@@ -15,6 +15,19 @@ LANGS = ["spanish", "polish", "mandarin", "cantonese", "chinese", "korean", "vie
          "croatian", "bosnian", "greek", "turkish", "american sign language", "asl"]
 
 EVERGREEN = re.compile(r"talent (pool|community|network)|future opportunit|general (application|interest)|expression of interest", re.I)
+
+# Temp / contract detection. These only label a job; they don't change its score.
+TEMP_TO_HIRE = re.compile(r"\b(temp(orary)?|contract)[- ]to[- ](hire|perm(anent)?)\b|\bc2h\b", re.I)
+TEMP_WORD = r"(temporary|temp|seasonal|interim|fixed[- ]term|limited[- ]term|short[- ]term)"
+TEMP_TITLE = re.compile(rf"\b{TEMP_WORD}\b|[(\[]\s*(contract|contractor|freelance)[^)\]]*[)\]]|[-–,]\s*contract(or)?\s*$|^contract\s", re.I)
+TEMP_FIELD = re.compile(r"temp|contract|seasonal|fixed[ -]?term|freelance|interim", re.I)
+TEMP_DESC = re.compile(
+    rf"(employment|job|position|worker( sub)?|assignment) type\s*[:\-]?\s*({TEMP_WORD}|contract(or)?)\b"
+    rf"|\b(this|the) (is a |role is a |position is a |job is a )?({TEMP_WORD}|contract) (position|role|assignment|opportunity|job)\b"
+    rf"|\b\d{{1,2}}[- ]?(\+ )?(month|week)s?\b[^.\n]{{0,25}}\b(contract|assignment)\b"
+    rf"|\b(temporary|contract) (assignment|engagement)\b"
+    rf"|\b(anticipated|expected|estimated) end date\b|\bduration of (the )?(assignment|contract)\b",
+    re.I)
 YEARS = re.compile(r"(?<![\d.$])(\d{1,2})\s*(?:\+|plus)?\s*(?:(?:-|to|–)\s*\d{1,2}\s*)?\+?\s*(?:or more\s*)?years?\b([^.;\n]{0,60})", re.I)
 
 
@@ -180,6 +193,27 @@ class Scorer:
         flags = ["Posted 30+ days ago"] if days > 30 else []
         return max_pts * frac, f"Posted {days} day(s) ago", flags
 
+    # ---------- temp / contract ----------
+    @staticmethod
+    def job_type(job):
+        """('Temp-to-hire' | 'Contract' | 'Temp' | None, reason) from title, employment type and description."""
+        title, emp, desc = job.get("title") or "", job.get("employment") or "", (job.get("description") or "")[:15000]
+        for text, where in ((title, "title"), (emp, "job type"), (desc, "description")):
+            m = TEMP_TO_HIRE.search(text)
+            if m:
+                return "Temp-to-hire", f"{where} says '{m.group(0)}'"
+        m = TEMP_TITLE.search(title)
+        if m:
+            kind = "Contract" if "contract" in m.group(0).lower() or "freelance" in m.group(0).lower() else "Temp"
+            return kind, f"title says '{m.group(0).strip(' -,()[]')}'"
+        m = TEMP_FIELD.search(emp)
+        if m:
+            return ("Contract" if m.group(0).lower() in ("contract", "freelance") else "Temp"), f"job type is '{emp}'"
+        m = TEMP_DESC.search(desc)
+        if m:
+            return ("Contract" if "contract" in m.group(0).lower() else "Temp"), f"description says '{m.group(0).strip()}'"
+        return None, None
+
     # ---------- total ----------
     def score(self, job):
         loc = geo.locate(job.get("location"), self.home, job.get("lat"), job.get("lon"))
@@ -198,6 +232,9 @@ class Scorer:
         if gate < 0.99:
             r_notes.append(f"Other parts scaled x{gate:.2f} because the title is a partial fit")
         total = 0 if cat == "excluded" else round(r_pts + q_pts + s_pts + c_pts + t_pts)
+        jtype, jreason = self.job_type(job)
+        if jtype:
+            r_notes.append(f"{jtype} job: {jreason} (label only, score unchanged)")
         breakdown = [
             {"part": "Role fit", "points": round(r_pts, 1), "max": self.w["role"], "notes": r_notes},
             {"part": "Requirements", "points": round(q_pts, 1), "max": self.w["requirements"], "notes": q_notes},
@@ -213,4 +250,5 @@ class Scorer:
             "breakdown": breakdown,
             "flags": r_flags + q_flags + c_flags + t_flags,
             "loc": loc,
+            "job_type": jtype,
         }

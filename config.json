@@ -6,13 +6,15 @@
   "workday_queries": [
     "human resources", "recruiting", "talent acquisition", "coordinator", "assistant", "receptionist", "front desk",
     "patient access", "patient services", "intake", "administrative", "scheduler", "onboarding", "behavioral health",
-    "research assistant", "customer service"
+    "research assistant", "customer service", "temporary", "temp", "contract"
   ],
   "search_queries": [
     "human resources coordinator", "hr assistant", "recruiting coordinator", "talent acquisition coordinator",
     "people operations coordinator", "onboarding coordinator", "front desk receptionist", "patient services representative",
     "patient access representative", "intake coordinator", "administrative assistant", "office coordinator",
-    "behavioral health technician", "research assistant psychology", "medical receptionist"
+    "behavioral health technician", "research assistant psychology", "medical receptionist",
+    "temporary receptionist", "temp administrative assistant", "contract recruiter", "temporary hr assistant",
+    "temp to hire office"
   ],
   "sources": [
     {"type": "workday", "url": "https://heinz.wd1.myworkdayjobs.com/KraftHeinz_Careers", "company": "Kraft Heinz", "setting": "corporate"},
@@ -67,6 +69,17 @@
      "setting": "university", "default_location": "Chicago, IL"},
 
     {"type": "amazon", "company": "Amazon (Chicago offices)", "setting": "corporate"},
+
+    {"type": "robert_half", "company": "Robert Half", "setting": "staffing agency",
+     "_about": "Division OT = administrative & customer support; most jobs are temp or temp-to-perm."},
+    {"type": "lasalle", "company": "LaSalle Network", "setting": "staffing agency",
+     "_about": "Chicago-based. Categories: administrative, human resources, operations/HR support, call center."},
+    {"type": "beaconhill", "company": "Beacon Hill Staffing", "setting": "staffing agency"},
+    {"type": "randstad", "company": "Randstad", "setting": "staffing agency"},
+    {"type": "manpower", "company": "Manpower", "setting": "staffing agency"},
+    {"type": "aquent", "company": "Aquent", "setting": "staffing agency"},
+    {"type": "atom", "url": "https://addisongroup.com/jobs/feeds/jobs.atom", "company": "Addison Group",
+     "setting": "staffing agency", "fields_in_text": true, "_about": "Feed shows only the newest 100 jobs nationwide."},
 
     {"type": "greenhouse", "token": "groupon", "company": "Groupon", "setting": "corporate"},
     {"type": "greenhouse", "token": "sproutsocial", "company": "Sprout Social", "setting": "corporate"},
