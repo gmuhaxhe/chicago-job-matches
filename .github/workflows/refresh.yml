@@ -5,6 +5,9 @@ on:
     - cron: "0 12 * * *"   # ~6 am Chicago (7 am in summer); GitHub may start scheduled runs a little late
     - cron: "0 19 * * *"   # ~1 pm Chicago
   workflow_dispatch: {}    # "Run workflow" button in the Actions tab
+  push:                    # rebuild right away when the code, scoring or employer list changes
+    branches: [main]
+    paths: ["**.py", "**.json", "web/**", ".github/workflows/**"]
 
 permissions:
   contents: write          # only for the occasional keep-active commit
