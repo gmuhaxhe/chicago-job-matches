@@ -1,0 +1,137 @@
+{
+  "_about": "Candidate profile used for match scoring, built from her resume. Edit freely; changes apply on the next refresh (or click 'Re-score').",
+  "home": {
+    "label": "Pilsen (18th St Pink Line)",
+    "lat": 41.8577,
+    "lon": -87.6693
+  },
+  "commute": {
+    "_about": "Estimated door-to-door transit minutes. Jobs at or under 'great' get full commute points; over 'max' get none.",
+    "great": 30,
+    "good": 45,
+    "ok": 60,
+    "max": 80
+  },
+  "weights": {
+    "role": 40,
+    "requirements": 20,
+    "skills": 10,
+    "commute": 15,
+    "recency": 15
+  },
+  "categories": [
+    {
+      "key": "hr",
+      "label": "HR & Recruiting",
+      "points": 45,
+      "patterns": [
+        "\\bh\\.?r\\.?\\b", "human resources?", "people (operations|ops|partner|team|experience|coordinator|associate|specialist|services)",
+        "recruit(ing|ment|er)?", "talent (acquisition|coordinator|associate|specialist|sourc)", "\\bsourcer\\b",
+        "(employee|new hire|people|hr) onboarding", "onboarding coordinator", "benefits (coordinator|specialist|assistant|associate|administrator)",
+        "employee (experience|relations|engagement|services)",
+        "learning (and|&) development", "\\bl&d\\b", "training (coordinator|assistant|specialist)", "\\bhris\\b",
+        "payroll (coordinator|assistant|specialist)", "workforce (coordinator|assistant)", "personnel"
+      ]
+    },
+    {
+      "key": "frontdesk",
+      "label": "Front Desk & Office",
+      "points": 40,
+      "patterns": [
+        "front desk", "receptionist", "reception", "office (coordinator|assistant|administrator|services|manager)",
+        "administrative (assistant|coordinator|specialist|associate)", "\\badmin(istrative)? assistant\\b", "executive assistant",
+        "workplace (coordinator|experience|services|operations)", "guest (services|relations|experience)", "concierge",
+        "client services? (coordinator|associate|representative|specialist)", "member services", "scheduling coordinator",
+        "\\bscheduler\\b", "operations (coordinator|assistant)", "program (coordinator|assistant)", "department assistant",
+        "project coordinator", "event(s)? coordinator", "facilities coordinator", "legal (administrative )?assistant",
+        "team assistant", "staff assistant", "secretary", "clerk"
+      ]
+    },
+    {
+      "key": "patient",
+      "label": "Patient Services & Intake",
+      "points": 40,
+      "patterns": [
+        "patient (services|access|registration|representative|coordinator|liaison|navigator|experience|care coordinator|financial)",
+        "intake", "admissions? (coordinator|representative|specialist|counselor|assistant)", "registration (specialist|representative|clerk)",
+        "unit (secretary|clerk|coordinator)", "health unit coordinator", "medical (office|front office|secretary|receptionist) ",
+        "medical office assistant", "access (representative|specialist|coordinator)", "care coordinator", "referral (coordinator|specialist)",
+        "authorization (specialist|coordinator)", "clinic (coordinator|assistant|receptionist)", "practice (coordinator|assistant)",
+        "medical records", "health information (clerk|technician|specialist)"
+      ]
+    },
+    {
+      "key": "psych",
+      "label": "Psychology-related",
+      "points": 32,
+      "patterns": [
+        "behavio(u)?ral health (technician|tech|specialist|associate|coordinator|assistant|navigator)", "mental health (technician|worker|associate|specialist)",
+        "behavior(al)? technician", "registered behavior technician", "\\brbt\\b", "case (aide|assistant|worker|manager)", "family (support|advocate)",
+        "research (assistant|coordinator|associate|technician)", "clinical research", "study coordinator", "psychometri", "community health worker",
+        "patient navigator", "peer (support|recovery)", "youth (worker|counselor|specialist|development)", "residential (counselor|advisor|aide)",
+        "direct support professional", "child life", "crisis (counselor|specialist|line)", "social services (assistant|aide|coordinator)",
+        "rehabilitation (aide|technician)", "program aide"
+      ]
+    },
+    {
+      "key": "service",
+      "label": "Client Service (open-minded)",
+      "points": 26,
+      "patterns": [
+        "customer (service|support|care|success|experience)", "client (success|support|care|experience|relations)", "account coordinator",
+        "support (associate|representative|coordinator)", "call center", "contact center", "service representative",
+        "marketing (coordinator|assistant)", "communications (coordinator|assistant)", "sales (coordinator|assistant|support)",
+        "onboarding (specialist|associate)", "caregiver", "care partner"
+      ]
+    },
+    {
+      "key": "general",
+      "label": "Other entry-level (open-minded)",
+      "points": 18,
+      "patterns": ["\\bcoordinator\\b", "\\bassistant\\b", "\\bassociate\\b", "\\brepresentative\\b"]
+    },
+    {
+      "key": "sales",
+      "label": "Sales (open-minded)",
+      "points": 14,
+      "patterns": ["sales development", "business development rep", "partner development", "inside sales", "sales (representative|associate)",
+                   "growth sales"]
+    }
+  ],
+  "exclude_title_patterns": [
+    "engineer", "developer", "software", "architect", "data scien", "machine learning", "\\bml\\b", "\\bai\\b research", "devops", "\\bsre\\b",
+    "trader", "trading", "quant", "actuar", "attorney", "lawyer", "counsel\\b", "paralegal manager", "physician", "surgeon", "\\bmd\\b",
+    "nurse", "\\brn\\b", "\\blpn\\b", "\\bcrna\\b", "practitioner", "pharmac", "therapist", "psychologist", "psychiatr", "\\blcsw\\b", "\\blcpc\\b",
+    "\\blpc\\b", "clinician", "dentist", "dental hygien", "radiolog", "sonograph", "technologist", "phlebotom", "respiratory", "anesthes",
+    "veterinar", "driver", "\\bcdl\\b", "mechanic", "electrician", "plumber", "hvac", "welder", "maintenance technician", "warehouse",
+    "forklift", "cook", "chef", "dishwasher", "barista", "server\\b", "bartender", "housekeep", "custodian", "janitor", "security officer",
+    "accountant", "\\bcpa\\b", "auditor", "tax (manager|senior|associate)", "underwriter", "financial advisor", "investment", "portfolio",
+    "sales executive", "account executive", "solutions consultant", "product manager", "program manager", "postdoc", "post doctoral", "fellow\\b",
+    "professor", "faculty", "lecturer", "instructor", "teacher", "controller", "\\bfinance\\b", "financial (analyst|planner|reporting)",
+    "accounting", "accounts (payable|receivable)", "compliance", "underwrit", "\\bit (support|specialist|technician)", "technical support",
+    "help ?desk", "\\btier (2|ii|3|iii)\\b", "medical assistant", "\\bcma\\b", "risk operations", "fraud", "brokerage", "\\bloan",
+    "collections", "strategy", "construction"
+  ],
+  "seniority": [
+    {"pattern": "^(?!.*\\bassociate\\b).*\\bpartner\\b", "factor": 0.6, "flag": "Mid-level HR partner role"},
+    {"pattern": "\\bassociate\\b.*\\bpartner\\b", "factor": 0.85, "flag": null},
+    {"pattern": "executive assistant to (the )?(ceo|president|chief|founder|svp|evp|vp)", "factor": 0.6, "flag": "Experienced-EA role"},
+    {"pattern": "\\b(chief|vp|vice president|svp|evp|head of|director)\\b", "factor": 0.05, "flag": "Senior leadership role"},
+    {"pattern": "\\b(manager|mgr|supervisor|principal)\\b", "factor": 0.3, "flag": "Manager-level title"},
+    {"pattern": "\\b(senior|sr\\.?|lead)\\b", "factor": 0.4, "flag": "Senior-level title"},
+    {"pattern": "\\b(iii|iv)\\b|\\b(3|4)\\s*$|\\blevel (3|4)\\b", "factor": 0.5, "flag": "Level III+ title"},
+    {"pattern": "\\bii\\b|\\b2\\s*$|\\blevel 2\\b", "factor": 0.85, "flag": null},
+    {"pattern": "\\b(intern|internship|co-op)\\b", "factor": 0.55, "flag": "Internship"}
+  ],
+  "entry_bonus_patterns": ["\\b(entry[- ]level|junior|jr\\.?|trainee|apprentice|new grad|recent graduate|early career)\\b", "\\b(i|1)\\b(?=\\s*($|[,(-]))"],
+  "skills": [
+    "schedul", "calendar", "appointment", "confidential", "hipaa", "customer service", "client service", "front desk", "check-in", "check in",
+    "phone", "data entry", "record", "microsoft office", "excel", "outlook", "word", "powerpoint", "onboarding", "filing", "multitask",
+    "communication", "empathy", "interpersonal", "organized", "organizational", "detail-oriented", "attention to detail", "conflict resolution",
+    "listening", "greet", "visitor", "inquiries", "cash", "point of sale", "inventory", "psychology", "behavioral", "patient", "caregiving",
+    "bilingual", "documentation", "coordination", "people skills"
+  ],
+  "languages_spoken": ["english", "albanian"],
+  "degree": "bachelor",
+  "degree_field_patterns": ["psycholog", "social (science|work)", "human (services|development)", "behavioral science", "related field"]
+}

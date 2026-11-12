@@ -1,0 +1,8 @@
+# Local data and anything personal stays off GitHub
+data/
+state/
+_site/
+personal.json
+secrets.json
+__pycache__/
+*.pyc
